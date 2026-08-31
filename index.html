@@ -2,17 +2,50 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Negocio al cambio</title>
     
-    <!-- Configuración PWA para Móviles -->
+    <!-- Configuración PWA Nativa (Pantalla Completa sin barra de navegador) -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Negocio al cambio">
+    <meta name="apple-mobile-web-app-title" content="Negocio al Cambio">
     <meta name="theme-color" content="#111827">
     
-    <!-- Icono integrado automático -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>">
+    <!-- Icono SVG -->
+    <link rel="icon" id="appIcon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>">
+
+    <!-- Web App Manifest embebido dinámicamente -->
+    <script>
+        (function() {
+            const manifest = {
+                "name": "Negocio al cambio",
+                "short_name": "NegocioCambio",
+                "description": "Calculadora Comercial y Cotizaciones de Divisas",
+                "start_url": "./",
+                "display": "standalone",
+                "orientation": "portrait",
+                "background_color": "#111827",
+                "theme_color": "#111827",
+                "icons": [
+                    {
+                        "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232563EB%22/><text x=%2250%22 y=%2265%22 font-size=%2255%22 text-anchor=%22middle%22 fill=%22%23EAB308%22 font-weight=%22bold%22>$</text></svg>",
+                        "sizes": "192x192 512x512",
+                        "type": "image/svg+xml",
+                        "purpose": "any maskable"
+                    }
+                ]
+            };
+            const stringManifest = JSON.stringify(manifest);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestUrl;
+            document.head.appendChild(link);
+        })();
+    </script>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,13 +71,20 @@
         body.font-small { font-size: 13px; }
         body.font-medium { font-size: 16px; }
         body.font-large { font-size: 20px; }
-        /* Ocultar scrollbar para un diseño más limpio */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background-color: #4B5563; border-radius: 10px; }
         .hidden { display: none !important; }
+        
+        /* Ocultar elementos de instalación si la app ya está corriendo como PWA */
+        @media standalone {
+            .pwa-only-banner, .pwa-only-menu { display: none !important; }
+        }
+        @media (display-mode: standalone) {
+            .pwa-only-banner, .pwa-only-menu { display: none !important; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-large min-h-screen flex flex-col transition-colors duration-300" onclick="closeAllDropdowns(event)">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-large min-h-screen flex flex-col transition-colors duration-300 select-none" onclick="closeAllDropdowns(event)">
 
     <!-- Header / Navbar -->
     <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
@@ -79,7 +119,7 @@
                     <button type="button" onclick="toggleModal('pagoModal'); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium">
                         <i class="fa-solid fa-mobile-screen-button text-green-500"></i> Perfiles de Pago Móvil
                     </button>
-                    <button type="button" onclick="triggerInstallFlow(); closeMenu()" class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-medium text-brandYellow font-bold">
+                    <button type="button" id="menuInstallBtn" onclick="triggerInstallFlow(); closeMenu()" class="pwa-only-menu w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3 text-sm font-bold text-brandYellow">
                         <i class="fa-solid fa-download"></i> Instalar Aplicación
                     </button>
                     <div class="border-t my-1 dark:border-gray-700"></div>
@@ -107,20 +147,18 @@
             </div>
         </div>
 
-        <!-- Banner Promocional de Instalación (PWA) -->
-        <div id="topInstallBanner" class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl p-4 shadow-lg mb-4 flex items-center justify-between gap-3 border border-blue-400/30">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-white text-brandBlue flex items-center justify-center font-black text-xl shadow flex-shrink-0">
-                    <i class="fa-solid fa-mobile-screen"></i>
-                </div>
-                <div>
-                    <h3 class="font-extrabold text-sm sm:text-base">¡Instala la App en tu Teléfono!</h3>
-                    <p class="text-xs text-blue-100">Úsala sin conexión y accede rápidamente desde tu pantalla de inicio.</p>
-                </div>
+        <!-- Banner Sutil de Instalación PWA (Muy compacto) -->
+        <div id="topInstallBanner" class="pwa-only-banner bg-gray-800/90 text-white rounded-xl px-3 py-2 shadow border border-gray-700 mb-3 flex items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <i class="fa-solid fa-mobile-screen text-brandYellow text-base flex-shrink-0"></i>
+                <span class="truncate text-gray-200">Instala la App en tu pantalla de inicio</span>
             </div>
-            <button onclick="triggerInstallFlow()" class="bg-brandYellow hover:bg-yellow-500 text-gray-900 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition flex-shrink-0 flex items-center gap-1.5">
-                <i class="fa-solid fa-download"></i> Instalar
-            </button>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button onclick="triggerInstallFlow()" class="bg-brandYellow hover:bg-yellow-500 text-gray-900 font-extrabold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                    <i class="fa-solid fa-download"></i> Instalar
+                </button>
+                <button onclick="dismissBanner()" class="text-gray-400 hover:text-white px-1.5 py-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
         </div>
 
         <!-- Banner Principal de Tasas -->
@@ -368,23 +406,16 @@
     <div id="instructionsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4">
             <div class="flex justify-between items-center border-b pb-3 dark:border-gray-700">
-                <h3 class="text-lg font-bold text-brandBlue flex items-center gap-2"><i class="fa-solid fa-download"></i> Instalar en tu Pantalla</h3>
+                <h3 class="text-lg font-bold text-brandBlue flex items-center gap-2"><i class="fa-solid fa-download"></i> Instalar Aplicación</h3>
                 <button type="button" onclick="toggleModal('instructionsModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                <p>Sigue estos sencillos pasos según tu dispositivo:</p>
                 <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <strong class="text-brandYellow flex items-center gap-1.5 mb-1"><i class="fa-brands fa-android"></i> Android (Chrome)</strong>
+                    <strong class="text-brandYellow flex items-center gap-1.5 mb-1"><i class="fa-brands fa-android"></i> Desde tu Navegador Android</strong>
                     <ol class="list-decimal pl-5 space-y-1 text-xs">
-                        <li>Toca los tres puntos (⋮) en la esquina superior.</li>
+                        <li>Presiona los tres puntos (⋮) arriba en la derecha del navegador.</li>
                         <li>Selecciona <strong>"Agregar a la pantalla principal"</strong> o <strong>"Instalar aplicación"</strong>.</li>
-                    </ol>
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <strong class="text-brandBlue flex items-center gap-1.5 mb-1"><i class="fa-brands fa-apple"></i> iPhone / iPad (Safari)</strong>
-                    <ol class="list-decimal pl-5 space-y-1 text-xs">
-                        <li>Toca el botón <strong>Compartir</strong> (<i class="fa-solid fa-arrow-up-from-bracket"></i>) en la parte inferior.</li>
-                        <li>Desplázate hacia abajo y selecciona <strong>"Agregar al inicio"</strong>.</li>
+                        <li>¡Listo! Se abrirá como una App nativa a pantalla completa.</li>
                     </ol>
                 </div>
             </div>
@@ -420,7 +451,7 @@
         </div>
     </div>
 
-    <!-- MODAL PAYWALL (PAGO) -->
+    <!-- MODAL PAYWALL (PAGO $4.99 UNICO) -->
     <div id="paywallModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000] hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border-t-4 border-brandRed space-y-4 text-center overflow-y-auto max-h-screen">
             <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-brandRed rounded-full flex items-center justify-center mx-auto text-3xl mb-2">
@@ -428,7 +459,7 @@
             </div>
             <h2 class="text-2xl font-black text-gray-900 dark:text-white">Prueba Finalizada</h2>
             <p class="text-sm text-gray-600 dark:text-gray-300">
-                Tu periodo de prueba de 3 días ha concluido. Para seguir usando todas las herramientas, realiza un <strong>pago único</strong> de <strong>$4.99</strong> y obtén acceso de por vida.
+                Tu periodo de prueba de 3 días ha concluido. Para seguir usando todas las herramientas, realiza un <strong>pago único</strong> de <strong>$4.99</strong> a la tasa BCV del día y obtén acceso de por vida.
             </p>
 
             <div class="bg-gray-100 dark:bg-gray-900 rounded-xl p-4 text-left border border-gray-200 dark:border-gray-700 shadow-inner">
@@ -477,12 +508,12 @@
         <span id="toastMsg" class="font-medium">Acción realizada</span>
     </div>
 
-    <!-- REGISTRO DINÁMICO DE SERVICE WORKER (FUNCIONAMIENTO SIN INTERNET) -->
+    <!-- REGISTRO DINÁMICO DE SERVICE WORKER -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'negocio-cambio-v1';
+                    const CACHE_NAME = 'negocio-cambio-v2';
                     const urlsToCache = [
                         './',
                         'https://cdn.tailwindcss.com',
@@ -496,6 +527,15 @@
                         self.skipWaiting();
                     });
 
+                    self.addEventListener('activate', event => {
+                        event.waitUntil(
+                            caches.keys().then(keys => Promise.all(
+                                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+                            ))
+                        );
+                        self.clients.claim();
+                    });
+
                     self.addEventListener('fetch', event => {
                         event.respondWith(
                             caches.match(event.request).then(response => {
@@ -507,12 +547,11 @@
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 const swUrl = URL.createObjectURL(blob);
                 navigator.serviceWorker.register(swUrl).then(() => {
-                    console.log('Service Worker registrado correctamente');
-                }).catch(err => console.log('Error instalando Service Worker', err));
+                    console.log('Service Worker PWA Registrado');
+                }).catch(err => console.log('SW Error:', err));
             });
         }
 
-        // Monitorear conectividad
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
@@ -526,12 +565,12 @@
         }
     </script>
 
-    <!-- JAVASCRIPT SEGURO -->
+    <!-- JAVASCRIPT SEGURO Y PWA CONTROLS -->
     <script>
-        // --- 0. CLAVE DE ACTIVACIÓN ---
+        // --- CLAVE DE ACTIVACIÓN ---
         const ACTIVATION_KEY = "EXITO2026";
 
-        // --- 1. VARIABLES Y ESTADO INICIAL ---
+        // --- VARIABLES Y ESTADO INICIAL ---
         let currentRateUSD = parseFloat(localStorage.getItem('cached_bcv')) || 75.50;
         let currentRateEUR = parseFloat(localStorage.getItem('cached_eur')) || 82.20;
         let currentRateUSDT = parseFloat(localStorage.getItem('cached_usdt')) || 85.00;
@@ -541,24 +580,54 @@
         let paymentProfiles = JSON.parse(localStorage.getItem('negocio_perfiles_pago')) || [];
         let currentFontSize = localStorage.getItem('negocio_font') || 'large';
 
-        // --- MANEJO DE INSTALACIÓN PWA ---
+        // --- COMPROBAR SI LA APLICACIÓN YA ESTÁ INSTALADA / PWA ---
+        function isRunningStandalone() {
+            return (window.matchMedia('(display-mode: standalone)').matches) || 
+                   (window.navigator.standalone) || 
+                   document.referrer.includes('android-app://');
+        }
+
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Mostrar banner superior si está disponible el prompt nativo
-            document.getElementById('topInstallBanner').classList.remove('hidden');
+            
+            // Solo mostrar banner si NO se está ejecutando ya como PWA instalada y si el usuario no cerró el banner
+            if (!isRunningStandalone() && localStorage.getItem('app_dismiss_install_banner') !== 'true') {
+                const banner = document.getElementById('topInstallBanner');
+                if (banner) banner.classList.remove('hidden');
+            }
         });
+
+        function dismissBanner() {
+            const banner = document.getElementById('topInstallBanner');
+            if (banner) banner.classList.add('hidden');
+            localStorage.setItem('app_dismiss_install_banner', 'true');
+        }
 
         function triggerInstallFlow() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        dismissBanner();
+                    }
+                    deferredPrompt = null;
+                });
             } else {
-                // Si el navegador bloquea el prompt (Safari / iOS / navegadores embebidos), mostrar guía explicativa
                 toggleModal('instructionsModal');
             }
         }
+
+        // Ocultar botones de instalación automáticamente si ya arrancó como app PWA
+        window.addEventListener('DOMContentLoaded', () => {
+            if (isRunningStandalone()) {
+                const banner = document.getElementById('topInstallBanner');
+                const menuBtn = document.getElementById('menuInstallBtn');
+                if (banner) banner.classList.add('hidden');
+                if (menuBtn) menuBtn.classList.add('hidden');
+            }
+        });
 
         // --- SISTEMA DE PRUEBA Y PAYWALL ---
         function checkTrialStatus() {
@@ -590,7 +659,7 @@
             }
         }
 
-        // --- 2. INICIALIZACIÓN ---
+        // --- INICAR APP ---
         window.onload = function() {
             applyFontSize(currentFontSize);
             setInterval(updateClock, 1000);
@@ -606,7 +675,7 @@
             setTimeout(fetchRates, 500); 
         }
 
-        // --- 3. FUNCIONES BÁSICAS DE NAVEGACIÓN Y UI ---
+        // --- UI & MENÚS ---
         function toggleMenu(event) {
             event.stopPropagation();
             document.getElementById('dropdownMenu').classList.toggle('hidden');
@@ -660,7 +729,7 @@
             } catch (e) {}
         }
 
-        // --- 4. MOTOR DE TASAS (API SEGURA CON FALLBACK) ---
+        // --- ACTUALIZACIÓN DE TASAS ---
         async function fetchRates() {
             if(!navigator.onLine) {
                 showToast('Modo sin conexión: usando tasas guardadas');
@@ -673,7 +742,6 @@
             try {
                 const proxyUrl = "https://api.allorigins.win/get?url=";
                 
-                // 1. Intentar BCV y USDT
                 let dataUSD = null;
                 try {
                     const res = await fetch('https://ve.dolarapi.com/v1/dolares');
@@ -697,7 +765,6 @@
                     }
                 }
 
-                // 2. Intentar Euros
                 let dataEUR = null;
                 try {
                     const resE = await fetch('https://ve.dolarapi.com/v1/euros');
@@ -797,7 +864,7 @@
             convertFromUSD();
         }
 
-        // --- 5. CONVERSOR RÁPIDO ---
+        // --- CONVERSOR ---
         function convertFromUSD() {
             const input = document.getElementById('convertUSD');
             const output = document.getElementById('convertVES');
@@ -820,7 +887,7 @@
             output.value = ves > 0 ? val.toFixed(2) : '';
         }
 
-        // --- 6. GESTIÓN DE PRODUCTOS ---
+        // --- PRODUCTOS ---
         function calculateVesPreview() {
             const input = document.getElementById('prodPriceUSD');
             const select = document.getElementById('prodRateType');
@@ -889,7 +956,7 @@
                 return;
             }
 
-            filtered.forEach((prod, index) => {
+            filtered.forEach((prod) => {
                 const rType = prod.rateType !== undefined ? prod.rateType : 0;
                 const rate = getSpecificRate(rType);
                 const totalVES = prod.priceUSD * rate;
@@ -951,7 +1018,7 @@
             showToast('Producto eliminado');
         }
 
-        // --- 7. PORTAPAPELES (COPIAR/COMPARTIR) ---
+        // --- PORTAPAPELES ---
         function copyProductDetails(name, divisa, ves, label, symbol) {
             const text = `🛍️ *${name}*\n💰 Precio: ${symbol}${divisa.toFixed(2)} (${label})\n🇻🇪 Bolívares: ${ves.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs`;
             
@@ -990,7 +1057,7 @@
             }
         }
 
-        // --- 8. PERFILES DE PAGO MÓVIL ---
+        // --- PERFILES DE PAGO ---
         function addPaymentProfile(e) {
             e.preventDefault();
             const bank = document.getElementById('newBank').value.trim();
@@ -1055,7 +1122,7 @@
             renderPaymentProfiles();
         }
 
-        // --- 9. CALCULADORA COMERCIAL ---
+        // --- CALCULADORA ---
         let calcExpr = "";
         function calcAppend(val) {
             calcExpr += val;
@@ -1134,7 +1201,7 @@
             }
         }
 
-        // --- 10. CONFIGURACIÓN (TAMAÑO LETRA Y TEMA) ---
+        // --- CONFIGURACIÓN ---
         function setFontSize(size) {
             currentFontSize = size;
             localStorage.setItem('negocio_font', size);
