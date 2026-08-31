@@ -447,6 +447,20 @@
                 </div>
             </div>
 
+            <!-- Sección de Copia de Seguridad -->
+            <div class="space-y-2 pt-3 border-t dark:border-gray-700">
+                <span class="font-medium block">Copia de Seguridad</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="exportBackup()" class="p-2.5 bg-brandBlue text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition flex items-center justify-center gap-1.5 shadow">
+                        <i class="fa-solid fa-download"></i> Crear Copia
+                    </button>
+                    <button type="button" onclick="document.getElementById('importBackupInput').click()" class="p-2.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-xl text-xs font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center justify-center gap-1.5 border border-gray-300 dark:border-gray-600">
+                        <i class="fa-solid fa-upload"></i> Restaurar Copia
+                    </button>
+                    <input type="file" id="importBackupInput" accept=".json" onchange="importBackup(event)" class="hidden">
+                </div>
+            </div>
+
             <button type="button" onclick="toggleModal('configModal')" class="w-full bg-gray-200 dark:bg-gray-700 py-3 rounded-xl font-semibold transition hover:bg-gray-300 dark:hover:bg-gray-600">Cerrar</button>
         </div>
     </div>
@@ -1201,7 +1215,7 @@
             }
         }
 
-        // --- CONFIGURACIÓN ---
+        // --- CONFIGURACIÓN Y COPIA DE SEGURIDAD ---
         function setFontSize(size) {
             currentFontSize = size;
             localStorage.setItem('negocio_font', size);
@@ -1234,6 +1248,66 @@
 
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
+        }
+
+        function exportBackup() {
+            const backupData = {
+                version: "1.0",
+                timestamp: new Date().toISOString(),
+                productos: JSON.parse(localStorage.getItem('negocio_productos') || '[]'),
+                perfiles_pago: JSON.parse(localStorage.getItem('negocio_perfiles_pago') || '[]'),
+                font: localStorage.getItem('negocio_font') || 'large',
+                cached_bcv: localStorage.getItem('cached_bcv'),
+                cached_eur: localStorage.getItem('cached_eur'),
+                cached_usdt: localStorage.getItem('cached_usdt'),
+                app_is_pro: localStorage.getItem('app_is_pro'),
+                app_install_date: localStorage.getItem('app_install_date')
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `respaldo_negocio_al_cambio_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Copia de seguridad descargada');
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.productos) localStorage.setItem('negocio_productos', JSON.stringify(data.productos));
+                    if (data.perfiles_pago) localStorage.setItem('negocio_perfiles_pago', JSON.stringify(data.perfiles_pago));
+                    if (data.font) localStorage.setItem('negocio_font', data.font);
+                    if (data.cached_bcv) localStorage.setItem('cached_bcv', data.cached_bcv);
+                    if (data.cached_eur) localStorage.setItem('cached_eur', data.cached_eur);
+                    if (data.cached_usdt) localStorage.setItem('cached_usdt', data.cached_usdt);
+                    if (data.app_is_pro) localStorage.setItem('app_is_pro', data.app_is_pro);
+                    if (data.app_install_date) localStorage.setItem('app_install_date', data.app_install_date);
+
+                    // Recargar variables de memoria
+                    products = JSON.parse(localStorage.getItem('negocio_productos')) || [];
+                    paymentProfiles = JSON.parse(localStorage.getItem('negocio_perfiles_pago')) || [];
+                    currentFontSize = localStorage.getItem('negocio_font') || 'large';
+
+                    applyFontSize(currentFontSize);
+                    renderProducts();
+                    renderPaymentProfiles();
+                    showToast('¡Datos restaurados con éxito!');
+                    
+                    event.target.value = '';
+                } catch (err) {
+                    alert('El archivo de copia de seguridad no es válido o está dañado.');
+                }
+            };
+            reader.readAsText(file);
         }
 
         function escapeHtml(text) {
